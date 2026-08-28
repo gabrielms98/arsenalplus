@@ -1,18 +1,14 @@
-// Arsenal+ — shows the product price when the page hides it (out-of-stock items).
-// The price is always present in the <head> as Open Graph product meta tags,
-// even when the storefront replaces the price block with the "Avise-me" form.
+// Arsenal+ — product pages: shows the hidden price of out-of-stock items and
+// adds the watchlist button. The price is always present in the <head> as Open
+// Graph product meta tags, even when the storefront replaces the price block
+// with the "Avise-me" form.
 (() => {
-  const getMeta = (prop) => {
-    const el = document.querySelector(`meta[property="${prop}"]`);
-    const content = el && el.getAttribute('content');
-    return content ? content.trim() : null;
-  };
+  const AP = globalThis.ArsenalPlus;
+  const getMeta = (prop) => AP.getMeta(document, prop);
 
   const getAmount = () => {
     const amount = getMeta('product:price:amount');
-    // No amount (not a product page) or a zero price: nothing useful to show.
-    if (!amount || /^0+([.,]0+)?$/.test(amount)) return null;
-    return amount;
+    return AP.isZeroAmount(amount) ? null : amount;
   };
 
   const getCurrency = () =>
@@ -30,6 +26,9 @@
   // themselves; :not(.arsenalplus-price) keeps our own block out of the check.
   const hasNativePrice = (details) =>
     !!details.querySelector('.product-price:not(.arsenalplus-price) .new-price');
+
+  const productUrl = () => getMeta('product:url') || location.href;
+  const productId = () => AP.productIdFromUrl(productUrl());
 
   const injectPrice = () => {
     const amount = getAmount();
@@ -68,7 +67,69 @@
     document.querySelectorAll('.arsenalplus-price').forEach((el) => el.remove());
   };
 
-  // Summary of the current product for the popup UI.
+  // ---- Watchlist button -------------------------------------------------
+
+  const getWatchlist = async () => {
+    const { watchlist = {} } = await chrome.storage.local.get('watchlist');
+    return watchlist;
+  };
+
+  const renderWatchButton = (btn, watching) => {
+    btn.textContent = watching ? '★ Acompanhando' : '☆ Acompanhar';
+    btn.title = watching
+      ? 'Clique para parar de acompanhar este produto'
+      : 'Avisar quando este produto voltar ao estoque (Arsenal+)';
+    btn.classList.toggle('watching', watching);
+  };
+
+  const toggleWatch = async (btn) => {
+    const id = productId();
+    if (!id) return;
+    const watchlist = await getWatchlist();
+    if (watchlist[id]) {
+      delete watchlist[id];
+    } else {
+      const details = findDetails();
+      watchlist[id] = {
+        id,
+        url: productUrl(),
+        name: getMeta('product:name') || document.title,
+        sku: getMeta('product:sku'),
+        brand: getMeta('product:brand'),
+        amount: getAmount(),
+        currency: getCurrency(),
+        available: details ? hasNativePrice(details) : false,
+        addedAt: Date.now(),
+        lastChecked: null,
+      };
+    }
+    await chrome.storage.local.set({ watchlist });
+    renderWatchButton(btn, !!watchlist[id]);
+  };
+
+  const setupWatchButton = async () => {
+    const details = findDetails();
+    if (!details || !productId()) return;
+    if (details.querySelector('.arsenalplus-watch')) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'arsenalplus-watch';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'arsenalplus-watch-btn';
+    renderWatchButton(btn, !!(await getWatchlist())[productId()]);
+    btn.addEventListener('click', () => toggleWatch(btn));
+    wrap.append(btn);
+
+    const anchor =
+      details.querySelector('.arsenalplus-price') ||
+      details.querySelector('.product-price:last-of-type') ||
+      details.querySelector('.product-meta');
+    anchor.insertAdjacentElement('afterend', wrap);
+  };
+
+  // ---- Popup messaging ---------------------------------------------------
+
   const getProductInfo = () => {
     const amount = getAmount();
     if (!amount) return null;
@@ -82,6 +143,8 @@
           : 'hidden';
 
     return {
+      id: productId(),
+      url: productUrl(),
       name: getMeta('product:name') || document.title,
       sku: getMeta('product:sku'),
       brand: getMeta('product:brand'),
@@ -92,17 +155,28 @@
     };
   };
 
+  // ---- Wiring ------------------------------------------------------------
+
   chrome.storage.sync
     .get({ showHiddenPrices: true })
     .then(({ showHiddenPrices }) => {
       if (showHiddenPrices) injectPrice();
+      return setupWatchButton();
     });
 
-  // React immediately when the toggle changes in the popup.
   chrome.storage.onChanged.addListener((changes, area) => {
+    // React immediately when the toggle changes in the popup.
     if (area === 'sync' && changes.showHiddenPrices) {
       if (changes.showHiddenPrices.newValue) injectPrice();
       else removePrice();
+    }
+    // Keep the watch button in sync when the popup edits the watchlist.
+    if (area === 'local' && changes.watchlist) {
+      const btn = document.querySelector('.arsenalplus-watch-btn');
+      const id = productId();
+      if (btn && id) {
+        renderWatchButton(btn, !!(changes.watchlist.newValue || {})[id]);
+      }
     }
   });
 
