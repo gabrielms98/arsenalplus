@@ -2,6 +2,8 @@
 
 Extensão de Chrome com melhorias para [arsenalsports.com](https://www.arsenalsports.com/).
 
+> **Projeto não oficial**, sem afiliação com a Arsenal Sports.
+
 ## Funcionalidades
 
 - **Preço oculto**: quando um produto está indisponível, a loja esconde o preço e mostra
@@ -13,6 +15,21 @@ Extensão de Chrome com melhorias para [arsenalsports.com](https://www.arsenalsp
   ligar/desligar a exibição de preços ocultos (aplicado na hora, sem recarregar a página)
   e um cartão com o produto da aba atual: nome, preço, marca, SKU e de onde o preço veio
   (loja, recuperado pela extensão, ou oculto).
+
+## Instalação
+
+1. Baixe o `arsenalplus-x.y.z.zip` mais recente na página de
+   [Releases](../../releases).
+2. Extraia o zip em uma pasta (que precisa permanecer no disco após a instalação).
+3. Abra `chrome://extensions` no Chrome.
+4. Ative o **Modo do desenvolvedor** (canto superior direito).
+5. Clique em **Carregar sem compactação** ("Load unpacked") e selecione a pasta extraída.
+6. Visite qualquer página de produto em arsenalsports.com.
+
+> Instalada dessa forma, a extensão **não atualiza sozinha**: para atualizar, baixe o
+> zip da nova versão, extraia por cima da mesma pasta e clique em ↻ na extensão em
+> `chrome://extensions`. O Chrome também pode exibir de tempos em tempos um aviso
+> sobre extensões em modo de desenvolvedor — é esperado.
 
 ## Desenvolvimento
 
