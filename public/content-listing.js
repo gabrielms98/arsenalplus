@@ -7,6 +7,7 @@
 
   const CACHE_KEY = 'priceCache';
   const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+  const CACHE_MAX_ENTRIES = 500;
   const FETCH_DELAY = 400; // ms between network fetches — be polite to the shop
   const FILTER_STORE = 'arsenalplus_filter';
 
@@ -90,7 +91,25 @@
       applyFilter(); // newly priced card must respect an active filter
     }
 
-    if (cacheDirty) await chrome.storage.local.set({ [CACHE_KEY]: cache });
+    if (cacheDirty) {
+      pruneCache(cache, now);
+      await chrome.storage.local.set({ [CACHE_KEY]: cache });
+    }
+  };
+
+  // Keeps the cache bounded: drop expired entries, then oldest-first down to
+  // the cap. Runs on every write, so the cache never grows past ~35KB.
+  const pruneCache = (cache, now) => {
+    for (const [id, entry] of Object.entries(cache)) {
+      if (now - entry.ts > CACHE_TTL) delete cache[id];
+    }
+    const ids = Object.keys(cache);
+    if (ids.length > CACHE_MAX_ENTRIES) {
+      ids.sort((a, b) => cache[a].ts - cache[b].ts);
+      for (const id of ids.slice(0, ids.length - CACHE_MAX_ENTRIES)) {
+        delete cache[id];
+      }
+    }
   };
 
   const removeFilledPrices = () => {
