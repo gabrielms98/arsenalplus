@@ -71,6 +71,11 @@ npm run build     # gera dist/
 npm run dev       # build em modo watch
 ```
 
+O popup usa React + Tailwind CSS v4 + [shadcn/ui](https://ui.shadcn.com) (tema
+_blue_, config em `components.json`; componentes em `src/components/ui/`). Os
+content scripts são JS puro — os botões injetados no site imitam o mesmo tema em
+CSS simples (`public/styles.css`).
+
 ## Instalação (modo desenvolvedor)
 
 1. Rode `npm run build`.

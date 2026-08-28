@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+
 const SOURCE_LABELS = {
   site: 'Preço exibido pela loja',
   extension: 'Preço oculto — recuperado pelo Arsenal+',
@@ -141,9 +143,12 @@ export default function App() {
                 {product.name}
               </p>
               {product.id && (
-                <button
-                  type="button"
-                  className={`star ${watchlist[product.id] ? 'on' : ''}`}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`size-6 text-lg ${
+                    watchlist[product.id] ? 'text-primary' : 'text-muted-foreground'
+                  }`}
                   title={
                     watchlist[product.id]
                       ? 'Parar de acompanhar'
@@ -152,7 +157,7 @@ export default function App() {
                   onClick={() => toggleWatch(product)}
                 >
                   {watchlist[product.id] ? '★' : '☆'}
-                </button>
+                </Button>
               )}
             </div>
             <p className="price">
@@ -174,14 +179,15 @@ export default function App() {
         <div className="watch-header">
           <h2>Acompanhando ({watched.length})</h2>
           {watched.length > 0 && (
-            <button
-              type="button"
-              className="check-now"
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-[11px] text-primary"
               disabled={checking}
               onClick={checkNow}
             >
               {checking ? 'Verificando…' : 'Verificar agora'}
-            </button>
+            </Button>
           )}
         </div>
 
@@ -198,25 +204,26 @@ export default function App() {
               className={`dot ${item.available ? 'ok' : ''}`}
               title={item.available ? 'Disponível' : 'Indisponível'}
             />
-            <button
-              type="button"
-              className="watch-name"
+            <Button
+              variant="link"
+              className="h-auto min-w-0 flex-1 justify-start p-0 text-xs font-normal text-foreground hover:text-primary"
               title={item.name}
               onClick={() => openUrl(item.url)}
             >
-              {item.name}
-            </button>
+              <span className="truncate">{item.name}</span>
+            </Button>
             <span className="watch-price">
               {item.amount ? `${item.currency} ${item.amount}` : '—'}
             </span>
-            <button
-              type="button"
-              className="watch-remove"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-5 text-[15px] text-muted-foreground hover:bg-transparent hover:text-destructive"
               title="Remover da lista"
               onClick={() => toggleWatch(item)}
             >
               ×
-            </button>
+            </Button>
           </div>
         ))}
 
