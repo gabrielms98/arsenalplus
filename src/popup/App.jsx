@@ -76,7 +76,7 @@ export default function App() {
         brand: item.brand,
         amount: item.amount,
         currency: item.currency,
-        available: item.priceSource === 'site',
+        available: !!item.available,
         addedAt: Date.now(),
         lastChecked: null,
       };

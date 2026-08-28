@@ -8,7 +8,7 @@
 
   const getAmount = () => {
     const amount = getMeta('product:price:amount');
-    return AP.isZeroAmount(amount) ? null : amount;
+    return AP.isZeroAmount(amount) || AP.isConsultPrice(amount) ? null : amount;
   };
 
   const getCurrency = () =>
@@ -26,6 +26,15 @@
   // themselves; :not(.arsenalplus-price) keeps our own block out of the check.
   const hasNativePrice = (details) =>
     !!details.querySelector('.product-price:not(.arsenalplus-price) .new-price');
+
+  // Available = the store shows a real price. A native price of "USD Consulte"
+  // (price on request) can't be purchased, so it doesn't count.
+  const isAvailable = (details) => {
+    const el = details.querySelector(
+      '.product-price:not(.arsenalplus-price) .new-price'
+    );
+    return !!el && !AP.isConsultPrice(el.textContent);
+  };
 
   const productUrl = () => getMeta('product:url') || location.href;
   const productId = () => AP.productIdFromUrl(productUrl());
@@ -98,7 +107,7 @@
         brand: getMeta('product:brand'),
         amount: getAmount(),
         currency: getCurrency(),
-        available: details ? hasNativePrice(details) : false,
+        available: details ? isAvailable(details) : false,
         addedAt: Date.now(),
         lastChecked: null,
       };
@@ -152,6 +161,7 @@
       currency: getCurrency(),
       validUntil: getMeta('product:priceValidUntil'),
       priceSource,
+      available: details ? isAvailable(details) : false,
     };
   };
 

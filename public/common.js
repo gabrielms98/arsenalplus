@@ -21,6 +21,12 @@ globalThis.ArsenalPlus = {
     return !amount || /^0+([.,]0+)?$/.test(amount);
   },
 
+  // "USD Consulte" — price on request. The product can't be bought online,
+  // so the tracker treats it the same as unavailable.
+  isConsultPrice(text) {
+    return /consulte/i.test(String(text || ''));
+  },
+
   // ".../produto/foo-bar-35880.html" -> "35880"
   productIdFromUrl(url) {
     const m = String(url).match(/-(\d+)\.html/);
@@ -33,7 +39,8 @@ globalThis.ArsenalPlus = {
     const amount = html.match(
       /<meta\s+property="product:price:amount"\s+content="([^"]*)"/
     );
-    if (!amount || this.isZeroAmount(amount[1])) return null;
+    if (!amount || this.isZeroAmount(amount[1]) || this.isConsultPrice(amount[1]))
+      return null;
     const currency = html.match(
       /<meta\s+property="product:price:currency"\s+content="([^"]*)"/
     );
@@ -41,8 +48,15 @@ globalThis.ArsenalPlus = {
   },
 
   // Out-of-stock product pages render the "Avise-me" form (<div class="reply">);
-  // in-stock pages don't. Verified against both page variants.
+  // in-stock pages don't. Verified against both page variants. Pages whose
+  // price (meta or displayed) reads "Consulte" count as unavailable too.
   isAvailableHtml(html) {
-    return !html.includes('class="reply"');
+    if (html.includes('class="reply"')) return false;
+    const meta = html.match(
+      /<meta\s+property="product:price:amount"\s+content="([^"]*)"/
+    );
+    if (meta && this.isConsultPrice(meta[1])) return false;
+    const shown = html.match(/<ins[^>]*class="[^"]*new-price[^"]*"[^>]*>([^<]*)/);
+    return !(shown && this.isConsultPrice(shown[1]));
   },
 };
