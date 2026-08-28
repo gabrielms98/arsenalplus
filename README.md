@@ -26,6 +26,18 @@ Extensão de Chrome com melhorias para [arsenalsports.com](https://www.arsenalsp
   um cartão com o produto da aba atual (nome, preço, marca, SKU e de onde o preço veio) e
   a lista de acompanhamento com status de disponibilidade e "Verificar agora".
 
+## Screenshots
+
+Produto indisponível: a loja esconde o preço e mostra só o formulário "Avise-me" —
+o Arsenal+ recupera o preço e adiciona o botão **☆ Acompanhar**:
+
+![Página de produto sem e com o Arsenal+](docs/comparacao-preco.png)
+
+O popup mostra o produto da aba atual e a lista de acompanhamento, com status de
+disponibilidade e verificação manual:
+
+<img src="docs/popup.png" width="330" alt="Popup do Arsenal+ com produto atual e lista de acompanhamento">
+
 ## Instalação
 
 1. Baixe o `arsenalplus-x.y.z.zip` mais recente na página de
