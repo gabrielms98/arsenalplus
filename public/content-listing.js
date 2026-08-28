@@ -141,18 +141,36 @@
     return el ? AP.parsePrice(el.textContent) : null;
   };
 
+  // Card titles render as "Ref.: 285315<br>NAME"; the link's title attribute
+  // carries the clean name with an " Arsenal Sports" suffix.
+  const cardName = (card) => {
+    const a = card.querySelector('.product-details .product-name a');
+    if (!a) return '';
+    const title = a.getAttribute('title');
+    if (title) return title.replace(/\s*Arsenal Sports\s*$/i, '').trim();
+    return a.textContent.replace(/Ref\.:\s*\S+/i, '').trim();
+  };
+
   const applyFilter = () => {
-    const { min, max } = getFilter();
-    const active = min != null || max != null;
+    // Only where the filter UI lives (listing pages) — keeps a persisted
+    // filter from silently hiding related-product cards on product pages.
+    if (!document.querySelector('.arsenalplus-filter')) return;
+
+    const { min, max, onlyReplicas, noPistols } = getFilter();
+    const priceActive = min != null || max != null;
+    const active = priceActive || onlyReplicas || noPistols;
     let hidden = 0;
 
     for (const card of allCards()) {
       const price = cardPrice(card);
+      const name = cardName(card);
       // Cards with unknown price stay visible — they may still be loading.
       const out =
-        active &&
-        price != null &&
-        ((min != null && price < min) || (max != null && price > max));
+        (priceActive &&
+          price != null &&
+          ((min != null && price < min) || (max != null && price > max))) ||
+        (!!onlyReplicas && !!name && !AP.isReplicaName(name)) ||
+        (!!noPistols && !!name && AP.isPistolName(name));
       const target = card.closest('.product-wrap') || card;
       target.classList.toggle('arsenalplus-filtered-out', out);
       if (out) hidden++;
@@ -196,17 +214,52 @@
     clear.type = 'button';
     clear.className = 'arsenalplus-filter-clear';
     clear.textContent = '×';
-    clear.title = 'Limpar filtro de preço';
+    clear.title = 'Limpar filtros (Arsenal+)';
 
     const count = document.createElement('span');
     count.className = 'arsenalplus-filter-count';
+
+    // Quick filters on what the card *is*, not its price: "Só réplicas" hides
+    // parts, magazines, gear and consumables; "Sem pistolas" hides handguns.
+    const makeCheck = (key, text, title, checked) => {
+      const lbl = document.createElement('label');
+      lbl.className = 'arsenalplus-check';
+      lbl.title = title;
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = !!checked;
+      input.addEventListener('change', () => {
+        setFilter({ ...getFilter(), [key]: input.checked || null });
+        applyFilter();
+      });
+      lbl.append(input, document.createTextNode(text));
+      return lbl;
+    };
+
+    const { onlyReplicas, noPistols } = getFilter();
+    const onlyReplicasCheck = makeCheck(
+      'onlyReplicas',
+      'Só réplicas',
+      'Ocultar peças, magazines e acessórios (Arsenal+)',
+      onlyReplicas
+    );
+    const noPistolsCheck = makeCheck(
+      'noPistols',
+      'Sem pistolas',
+      'Ocultar pistolas e revólveres (Arsenal+)',
+      noPistols
+    );
 
     let debounce;
     const onInput = () => {
       clearTimeout(debounce);
       debounce = setTimeout(() => {
         const parse = (v) => (v === '' ? null : Math.max(0, Number(v)));
-        setFilter({ min: parse(minInput.value), max: parse(maxInput.value) });
+        setFilter({
+          ...getFilter(),
+          min: parse(minInput.value),
+          max: parse(maxInput.value),
+        });
         applyFilter();
       }, 300);
     };
@@ -215,17 +268,32 @@
     clear.addEventListener('click', () => {
       minInput.value = '';
       maxInput.value = '';
+      onlyReplicasCheck.querySelector('input').checked = false;
+      noPistolsCheck.querySelector('input').checked = false;
       setFilter({});
       applyFilter();
     });
 
-    wrap.append(label, minInput, dash, maxInput, clear, count);
+    wrap.append(
+      label,
+      minInput,
+      dash,
+      maxInput,
+      onlyReplicasCheck,
+      noPistolsCheck,
+      clear,
+      count
+    );
     toolbox.insertAdjacentElement('afterend', wrap);
 
     applyFilter(); // restore a filter persisted from the previous page
   };
 
   // ---- Wiring ------------------------------------------------------------
+
+  // Hooks for content-gbbr.js: after it swaps in merged result cards, it
+  // re-runs the price fill and the filters over them.
+  AP.listing = { fillMissingPrices, applyFilter };
 
   setupFilterUI();
 

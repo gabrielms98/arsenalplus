@@ -59,4 +59,60 @@ globalThis.ArsenalPlus = {
     const shown = html.match(/<ins[^>]*class="[^"]*new-price[^"]*"[^>]*>([^<]*)/);
     return !(shown && this.isConsultPrice(shown[1]));
   },
+
+  // ---- Product-name classification ---------------------------------------
+  // The store has no usable attribute data (its own AEG/GBB filter has zero
+  // tagged products), so features classify products by display name. Rule
+  // order matters and was validated against the live catalog (395 products
+  // across six GBB searches): part nouns win over gun words, and gun words win
+  // over the "FOR <platform>" accessory pattern — one real rifle is literally
+  // named "VFC GBBR FOR AK105". Plain "barrel"/"stock"/"handguard"/"rail" must
+  // NOT be part nouns: they appear inside rifle names ("SHORT BARREL",
+  // "FOLDING STOCK", "M-LOK HANDGUARD RAIL").
+  NAME_PART:
+    /magazine|nozzle|valve|hop.?up|bucking|inner barrel|out+er barrel|barrel kit|gas block|charging handle|bolt catch|trigger guard|trigger box|stock tube|buffer|adapter|receiver|flash hider|speed ?loader|hand ?stop|\bgrip\b|\bshells?\b|\bpcs\b|\bkit\b|gas route|speed safety|retrofit/i,
+  NAME_LONG_GUN: /\b(rifle|smg|shotgun|carbine|sniper|dmr|pdw)\b/i,
+  NAME_BLOWBACK_GUN: /blowback airsoft/i,
+  NAME_ACCESSORY_FOR: /\bfor\b|\bpara\b/i,
+  NAME_PISTOL: /\b(pistol|pistola|revolver|rev[oó]lver)\b/i,
+
+  isPartName(name) {
+    if (!name) return false;
+    if (this.NAME_PART.test(name)) return true;
+    if (
+      this.NAME_LONG_GUN.test(name) ||
+      this.NAME_BLOWBACK_GUN.test(name) ||
+      this.NAME_PISTOL.test(name)
+    ) {
+      return false;
+    }
+    return this.NAME_ACCESSORY_FOR.test(name);
+  },
+
+  // Complete replica of any kind (rifle, SMG, shotgun, sniper or pistol).
+  isReplicaName(name) {
+    if (!name || this.isPartName(name)) return false;
+    return (
+      this.NAME_LONG_GUN.test(name) ||
+      this.NAME_BLOWBACK_GUN.test(name) ||
+      this.NAME_PISTOL.test(name)
+    );
+  },
+
+  // Pistol/revolver only — AR-style "pistols" and pistol-carbine kits keep a
+  // long-gun word in the name and don't count as pistols.
+  isPistolName(name) {
+    if (!name || this.isPartName(name)) return false;
+    return this.NAME_PISTOL.test(name) && !this.NAME_LONG_GUN.test(name);
+  },
+
+  // Long gun (the GBBR merged-search keep rule). The queries feeding it
+  // already guarantee a GBB context in the name. "blowback airsoft" alone
+  // covers long guns named without a gun word ("GBBR M4A1 BLOWBACK AIRSOFT
+  // BLACK") but must yield to pistols ("BLOWBACK AIRSOFT PISTOL").
+  isLongGunName(name) {
+    if (!name || this.isPartName(name)) return false;
+    if (this.NAME_LONG_GUN.test(name)) return true;
+    return this.NAME_BLOWBACK_GUN.test(name) && !this.NAME_PISTOL.test(name);
+  },
 };

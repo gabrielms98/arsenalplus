@@ -15,9 +15,19 @@ Extensão de Chrome com melhorias para [arsenalsports.com](https://www.arsenalsp
   indisponíveis (que não mostram preço) são preenchidos buscando o preço da página de
   cada produto, com cache de 24h e um intervalo entre requisições para não sobrecarregar
   a loja.
+- **Busca GBBR combinada**: a busca da loja é um E de trechos do nome, então nenhuma
+  busca única encontra todos os rifles gas blowback — uns se chamam "GBBR", outros só
+  "GBB … RIFLE" (Tokyo Marui), outros "GBB … SMG/SHOTGUN". Ao buscar algo com "gbb",
+  um banner oferece combinar as buscas que juntas cobrem o catálogo, remover peças,
+  magazines e pistolas pelo nome, e mostrar todos os rifles GBB em uma página só
+  (usando os próprios cartões da loja, então preços e filtros continuam funcionando).
 - **Filtro de preço**: a loja tem um filtro de faixa de preço quebrado no servidor; a
   extensão adiciona campos mín/máx na barra de ordenação que filtram os produtos da
   página no navegador (persistem entre páginas da mesma busca).
+- **Filtros rápidos de tipo**: junto do filtro de preço, as caixas "Só réplicas"
+  (esconde peças, magazines e acessórios) e "Sem pistolas" (esconde pistolas e
+  revólveres) filtram qualquer listagem pelo nome do produto — útil porque o filtro
+  de propulsão da própria loja não tem nenhum produto marcado.
 - **Lista de acompanhamento**: um botão ☆ nas páginas de produto (e no popup) adiciona
   o item a uma lista verificada automaticamente a cada hora em segundo plano. Quando um
   produto volta ao estoque, você recebe uma notificação do navegador com o preço.

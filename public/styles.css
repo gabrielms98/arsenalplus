@@ -98,6 +98,67 @@
   font-size: 12px;
 }
 
+/* Quick type filters (Só réplicas / Sem pistolas) */
+.arsenalplus-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 0 8px;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* The site's theme hides raw checkbox inputs in favor of .fake-input spans;
+   force ours back to a visible native checkbox. */
+.arsenalplus-check input[type='checkbox'] {
+  appearance: auto !important;
+  -webkit-appearance: checkbox !important;
+  opacity: 1 !important;
+  position: static !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin: 0 !important;
+  cursor: pointer;
+}
+
 .arsenalplus-filtered-out {
   display: none !important;
+}
+
+/* GBBR merged search banner on search-result pages */
+.arsenalplus-gbbr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 10px 0 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(27, 75, 155, 0.25);
+  border-radius: 8px;
+  background: #f2f6fc;
+  font-size: 13px;
+}
+
+.arsenalplus-gbbr-status {
+  color: #333;
+}
+
+.arsenalplus-gbbr-btn {
+  border: 1px solid #1b4b9b;
+  border-radius: 6px;
+  background: #1b4b9b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.arsenalplus-gbbr-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
