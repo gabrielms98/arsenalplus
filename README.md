@@ -11,10 +11,20 @@ Extensão de Chrome com melhorias para [arsenalsports.com](https://www.arsenalsp
   da página (`<meta property="product:price:amount">`). A extensão lê esses metadados e
   exibe o preço no lugar onde ele apareceria normalmente, com um selo **Arsenal+**
   indicando que foi a extensão que o recuperou.
+- **Preços nas listagens**: em resultados de busca e categorias, os cartões de produtos
+  indisponíveis (que não mostram preço) são preenchidos buscando o preço da página de
+  cada produto, com cache de 24h e um intervalo entre requisições para não sobrecarregar
+  a loja.
+- **Filtro de preço**: a loja tem um filtro de faixa de preço quebrado no servidor; a
+  extensão adiciona campos mín/máx na barra de ordenação que filtram os produtos da
+  página no navegador (persistem entre páginas da mesma busca).
+- **Lista de acompanhamento**: um botão ☆ nas páginas de produto (e no popup) adiciona
+  o item a uma lista verificada automaticamente a cada hora em segundo plano. Quando um
+  produto volta ao estoque, você recebe uma notificação do navegador com o preço.
 - **Popup (React)**: clicando no ícone da extensão abre um painel com um toggle para
-  ligar/desligar a exibição de preços ocultos (aplicado na hora, sem recarregar a página)
-  e um cartão com o produto da aba atual: nome, preço, marca, SKU e de onde o preço veio
-  (loja, recuperado pela extensão, ou oculto).
+  ligar/desligar a exibição de preços ocultos (aplicado na hora, sem recarregar a página),
+  um cartão com o produto da aba atual (nome, preço, marca, SKU e de onde o preço veio) e
+  a lista de acompanhamento com status de disponibilidade e "Verificar agora".
 
 ## Instalação
 
@@ -53,10 +63,13 @@ clique em ↻ na extensão em `chrome://extensions`.
 ## Estrutura
 
 ```
-├── public/            # copiado como está para dist/
+├── public/                 # copiado como está para dist/
 │   ├── manifest.json
-│   ├── content.js     # roda nas páginas do site (injeta o preço)
-│   ├── styles.css     # estilo do selo Arsenal+ na página
+│   ├── common.js           # helpers compartilhados (parsing de preço/meta)
+│   ├── content-product.js  # páginas de produto: preço oculto + botão acompanhar
+│   ├── content-listing.js  # listagens: preços nos cartões + filtro de preço
+│   ├── background.js       # service worker: verificação periódica da lista
+│   ├── styles.css          # estilos injetados no site
 │   └── icons/
 ├── popup.html         # entrada do popup (Vite)
 ├── src/popup/         # UI do popup em React
@@ -68,12 +81,17 @@ clique em ↻ na extensão em `chrome://extensions`.
 
 ## Como funciona
 
-- `content.js` roda em todas as páginas do site. Em páginas de produto, ele lê
-  `product:price:amount` e `product:price:currency` do `<head>`.
-- Se a página já mostra o preço (produto em estoque), a extensão não faz nada.
-- Se não, injeta um bloco `<div class="product-price"><ins class="new-price">` —
-  as mesmas classes que o site usa — logo após o logo da marca, então o visual
-  fica idêntico ao preço nativo.
-- O popup conversa com o `content.js` via `chrome.tabs.sendMessage` para mostrar os
-  dados do produto, e o toggle é persistido em `chrome.storage.sync`; o `content.js`
-  escuta `chrome.storage.onChanged` e adiciona/remove o preço imediatamente.
+- Mesmo quando a loja esconde o preço de um produto indisponível, ele continua no
+  `<head>` da página (`product:price:amount` / `product:price:currency`). Os content
+  scripts leem esses metadados e injetam blocos `<div class="product-price"><ins
+  class="new-price">` — as mesmas classes do site — então o visual fica idêntico ao
+  preço nativo.
+- Nas listagens, cada cartão sem preço tem sua página buscada via `fetch` (mesma
+  origem), com cache em `chrome.storage.local` e 400ms entre requisições.
+- A disponibilidade de um produto é detectada pela presença do formulário
+  "Avise-me" (`<div class="reply">`) na página: presente = indisponível.
+- O service worker usa `chrome.alarms` para verificar a lista de acompanhamento a
+  cada hora e `chrome.notifications` para avisar quando um item volta ao estoque
+  (clicar na notificação abre a página do produto).
+- O popup conversa com os content scripts via `chrome.tabs.sendMessage`; o toggle é
+  persistido em `chrome.storage.sync` e aplicado na hora via `chrome.storage.onChanged`.

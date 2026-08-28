@@ -23,3 +23,81 @@
   cursor: help;
   user-select: none;
 }
+
+/* Listing-card variant: centered like the native card price */
+.arsenalplus-card-price {
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.arsenalplus-card-price .arsenalplus-badge {
+  padding: 1px 6px;
+  font-size: 10px;
+}
+
+/* Watchlist button on product pages */
+.arsenalplus-watch {
+  margin: 10px 0;
+}
+
+.arsenalplus-watch-btn {
+  border: 1px solid #1b4b9b;
+  border-radius: 6px;
+  background: #fff;
+  color: #1b4b9b;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.arsenalplus-watch-btn.watching {
+  background: #1b4b9b;
+  color: #fff;
+}
+
+/* Price range filter in the listing toolbar */
+.arsenalplus-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 14px;
+  font-size: 13px;
+}
+
+.arsenalplus-filter label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.arsenalplus-filter-input {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.arsenalplus-filter-clear {
+  border: none;
+  background: none;
+  font-size: 16px;
+  line-height: 1;
+  color: #888;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.arsenalplus-filter-clear:hover {
+  color: #e5443b;
+}
+
+.arsenalplus-filter-count {
+  color: #888;
+  font-size: 12px;
+}
+
+.arsenalplus-filtered-out {
+  display: none !important;
+}
