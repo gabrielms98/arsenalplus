@@ -92,17 +92,22 @@ clique em ↻ na extensão em `chrome://extensions`.
 ```
 ├── public/                 # copiado como está para dist/
 │   ├── manifest.json
-│   ├── common.js           # helpers compartilhados (parsing de preço/meta)
+│   ├── common.js           # helpers compartilhados (preço/meta, classificação por nome)
 │   ├── content-product.js  # páginas de produto: preço oculto + botão acompanhar
-│   ├── content-listing.js  # listagens: preços nos cartões + filtro de preço
+│   ├── content-listing.js  # listagens: preços nos cartões + filtros de preço e tipo
+│   ├── content-gbbr.js     # busca combinada de rifles GBB nas páginas de busca
 │   ├── background.js       # service worker: verificação periódica da lista
 │   ├── styles.css          # estilos injetados no site
 │   └── icons/
-├── popup.html         # entrada do popup (Vite)
-├── src/popup/         # UI do popup em React
-│   ├── main.jsx
-│   ├── App.jsx
-│   └── popup.css
+├── popup.html              # entrada do popup (Vite)
+├── src/
+│   ├── popup/              # UI do popup em React
+│   │   ├── main.jsx
+│   │   ├── App.jsx
+│   │   └── popup.css       # Tailwind v4 + tema shadcn (blue) + estilos do popup
+│   ├── components/ui/      # componentes shadcn/ui (button.jsx)
+│   └── lib/utils.js        # cn()
+├── components.json         # config do shadcn/ui
 └── vite.config.js
 ```
 
