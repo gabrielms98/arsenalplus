@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "vite build",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "package": "npm run build && mkdir -p releases && cd dist && zip -qr ../releases/arsenalplus-$npm_package_version.zip . && cd .. && ls -t releases/*.zip | tail -n +4 | xargs rm -f"
   },
   "keywords": [],
   "author": "",
