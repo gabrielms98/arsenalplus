@@ -1,5 +1,8 @@
 # Arsenal+
 
+![Downloads](https://img.shields.io/github/downloads/gabrielms98/arsenalplus/total?label=downloads)
+![Status](https://img.shields.io/badge/status-funcionando-brightgreen)
+
 Extensão de Chrome com melhorias para [arsenalsports.com](https://www.arsenalsports.com/).
 
 > **Projeto não oficial**, sem afiliação com a Arsenal Sports.
