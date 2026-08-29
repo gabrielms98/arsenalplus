@@ -15,11 +15,12 @@ Extensão de Chrome com melhorias para [arsenalsports.com](https://www.arsenalsp
   indisponíveis (que não mostram preço) são preenchidos buscando o preço da página de
   cada produto, com cache de 24h e um intervalo entre requisições para não sobrecarregar
   a loja.
-- **Busca GBBR combinada**: a busca da loja é um E de trechos do nome, então nenhuma
-  busca única encontra todos os rifles gas blowback — uns se chamam "GBBR", outros só
-  "GBB … RIFLE" (Tokyo Marui), outros "GBB … SMG/SHOTGUN". Ao buscar algo com "gbb",
-  um banner oferece combinar as buscas que juntas cobrem o catálogo, remover peças,
-  magazines e pistolas pelo nome, e mostrar todos os rifles GBB em uma página só
+- **Filtros de catálogo (presets)**: a busca da loja é um E de trechos do nome e seus
+  filtros de atributo não são mantidos, então não dá para navegar por "todas as
+  coronhas" ou "todos os rifles GBB" nativamente. Em qualquer listagem, uma barra de
+  presets (Rifles GBB, Magazines, Bolts, Nozzles, Hop-up, Canos, Gatilhos, Coronhas,
+  Handguards, Grips frontais, Pistol grips, Slides) roda as buscas que cobrem o tipo,
+  junta todas as páginas de resultado, filtra pelo nome e mostra tudo em uma página só
   (usando os próprios cartões da loja, então preços e filtros continuam funcionando).
 - **Filtro de preço**: a loja tem um filtro de faixa de preço quebrado no servidor; a
   extensão adiciona campos mín/máx na barra de ordenação que filtram os produtos da
@@ -95,7 +96,7 @@ clique em ↻ na extensão em `chrome://extensions`.
 │   ├── common.js           # helpers compartilhados (preço/meta, classificação por nome)
 │   ├── content-product.js  # páginas de produto: preço oculto + botão acompanhar
 │   ├── content-listing.js  # listagens: preços nos cartões + filtros de preço e tipo
-│   ├── content-gbbr.js     # busca combinada de rifles GBB nas páginas de busca
+│   ├── content-presets.js  # presets: buscas combinadas por tipo de produto/peça
 │   ├── background.js       # service worker: verificação periódica da lista
 │   ├── styles.css          # estilos injetados no site
 │   └── icons/

@@ -19,7 +19,6 @@ const timeAgo = (ts) => {
 
 export default function App() {
   const [enabled, setEnabled] = useState(null);
-  // undefined = loading, null = no product info, object = product page
   const [product, setProduct] = useState(undefined);
   const [onSite, setOnSite] = useState(true);
   const [watchlist, setWatchlist] = useState({});
@@ -28,7 +27,6 @@ export default function App() {
   const refreshProduct = async () => {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      // Throws if the content script isn't there (i.e. not on arsenalsports.com).
       const info = await chrome.tabs.sendMessage(tab.id, { type: 'getProductInfo' });
       setProduct(info ?? null);
     } catch {
@@ -61,7 +59,6 @@ export default function App() {
     const next = !enabled;
     setEnabled(next);
     chrome.storage.sync.set({ showHiddenPrices: next });
-    // The product card's status line depends on the toggle; refresh it.
     setTimeout(refreshProduct, 100);
   };
 

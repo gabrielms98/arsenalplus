@@ -1,17 +1,11 @@
-// Arsenal+ — listing pages (search results, categories, related products):
-// fills in prices for out-of-stock cards by fetching each product page's meta
-// tags (cached), and adds a client-side price range filter to the toolbar
-// (the store's own precoRange filter is broken server-side).
 (() => {
   const AP = globalThis.ArsenalPlus;
 
   const CACHE_KEY = 'priceCache';
-  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+  const CACHE_TTL = 24 * 60 * 60 * 1000;
   const CACHE_MAX_ENTRIES = 500;
-  const FETCH_DELAY = 400; // ms between network fetches — be polite to the shop
+  const FETCH_DELAY = 400;
   const FILTER_STORE = 'arsenalplus_filter';
-
-  // ---- Card discovery ----------------------------------------------------
 
   const allCards = () => [...document.querySelectorAll('.product')];
 
@@ -26,8 +20,6 @@
         !card.querySelector('.new-price') &&
         AP.productIdFromUrl(cardLink(card) || '')
     );
-
-  // ---- Price fill --------------------------------------------------------
 
   const fillCard = (card, { amount, currency }) => {
     if (card.querySelector('.arsenalplus-price')) return;
@@ -46,14 +38,13 @@
 
     container.append(price, badge);
 
-    // Available cards keep their price right before the card button; mirror that.
     const details = card.querySelector('.product-details') || card;
     const btn = details.querySelector('a.btn');
     if (btn) btn.insertAdjacentElement('beforebegin', container);
     else details.append(container);
   };
 
-  let fillRun = 0; // invalidates an in-flight run when the toggle flips off
+  let fillRun = 0;
 
   const fillMissingPrices = async () => {
     const run = ++fillRun;
@@ -88,7 +79,7 @@
 
       if (run !== fillRun) break;
       fillCard(card, entry);
-      applyFilter(); // newly priced card must respect an active filter
+      applyFilter();
     }
 
     if (cacheDirty) {
@@ -97,8 +88,6 @@
     }
   };
 
-  // Keeps the cache bounded: drop expired entries, then oldest-first down to
-  // the cap. Runs on every write, so the cache never grows past ~35KB.
   const pruneCache = (cache, now) => {
     for (const [id, entry] of Object.entries(cache)) {
       if (now - entry.ts > CACHE_TTL) delete cache[id];
@@ -118,8 +107,6 @@
       .forEach((el) => el.remove());
   };
 
-  // ---- Price range filter ------------------------------------------------
-
   const getFilter = () => {
     try {
       return JSON.parse(sessionStorage.getItem(FILTER_STORE)) || {};
@@ -131,9 +118,7 @@
   const setFilter = (f) => {
     try {
       sessionStorage.setItem(FILTER_STORE, JSON.stringify(f));
-    } catch {
-      /* private mode etc. — filter just won't survive navigation */
-    }
+    } catch {}
   };
 
   const cardPrice = (card) => {
@@ -141,8 +126,6 @@
     return el ? AP.parsePrice(el.textContent) : null;
   };
 
-  // Card titles render as "Ref.: 285315<br>NAME"; the link's title attribute
-  // carries the clean name with an " Arsenal Sports" suffix.
   const cardName = (card) => {
     const a = card.querySelector('.product-details .product-name a');
     if (!a) return '';
@@ -152,8 +135,6 @@
   };
 
   const applyFilter = () => {
-    // Only where the filter UI lives (listing pages) — keeps a persisted
-    // filter from silently hiding related-product cards on product pages.
     if (!document.querySelector('.arsenalplus-filter')) return;
 
     const { min, max, onlyReplicas, noPistols } = getFilter();
@@ -164,7 +145,6 @@
     for (const card of allCards()) {
       const price = cardPrice(card);
       const name = cardName(card);
-      // Cards with unknown price stay visible — they may still be loading.
       const out =
         (priceActive &&
           price != null &&
@@ -219,8 +199,6 @@
     const count = document.createElement('span');
     count.className = 'arsenalplus-filter-count';
 
-    // Quick filters on what the card *is*, not its price: "Só réplicas" hides
-    // parts, magazines, gear and consumables; "Sem pistolas" hides handguns.
     const makeCheck = (key, text, title, checked) => {
       const lbl = document.createElement('label');
       lbl.className = 'arsenalplus-check';
@@ -286,13 +264,9 @@
     );
     toolbox.insertAdjacentElement('afterend', wrap);
 
-    applyFilter(); // restore a filter persisted from the previous page
+    applyFilter();
   };
 
-  // ---- Wiring ------------------------------------------------------------
-
-  // Hooks for content-gbbr.js: after it swaps in merged result cards, it
-  // re-runs the price fill and the filters over them.
   AP.listing = { fillMissingPrices, applyFilter };
 
   setupFilterUI();
@@ -308,7 +282,7 @@
       if (changes.showHiddenPrices.newValue) {
         fillMissingPrices();
       } else {
-        fillRun++; // stop any in-flight fill
+        fillRun++;
         removeFilledPrices();
         applyFilter();
       }

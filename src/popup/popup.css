@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 
-/* shadcn/ui theme — "blue" base color (https://ui.shadcn.com/themes) */
 :root {
   --radius: 0.65rem;
   --background: oklch(1 0 0);
@@ -78,9 +77,6 @@
   }
 }
 
-/* ---- Popup layout (pre-Tailwind styles, rebased onto the theme tokens) ---- */
-
-/* Accent red for prices, kept from the store's palette */
 :root {
   --red: #e5443b;
 }

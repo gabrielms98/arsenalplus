@@ -1,10 +1,8 @@
-// Arsenal+ service worker — periodically re-checks watched products and
-// notifies when one comes back in stock.
 importScripts('common.js');
 
 const CHECK_ALARM = 'arsenalplus-check';
 const CHECK_PERIOD_MINUTES = 60;
-const FETCH_DELAY = 500; // ms between product fetches — be polite to the shop
+const FETCH_DELAY = 500;
 
 const ensureAlarm = () => {
   chrome.alarms.create(CHECK_ALARM, {
@@ -20,11 +18,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === CHECK_ALARM) checkWatchlist();
 });
 
-// "Verificar agora" from the popup.
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.type === 'checkWatchlist') {
     checkWatchlist().then(sendResponse);
-    return true; // async response
+    return true;
   }
 });
 
@@ -52,7 +49,6 @@ async function checkWatchlist() {
 
       if (available && !wasAvailable) {
         backInStock++;
-        // Notification id = product URL, so onClicked can open it directly.
         chrome.notifications.create(item.url, {
           type: 'basic',
           iconUrl: 'icons/icon128.png',
@@ -61,9 +57,7 @@ async function checkWatchlist() {
           priority: 2,
         });
       }
-    } catch {
-      // network hiccup — keep previous state, try again next cycle
-    }
+    } catch {}
     await new Promise((r) => setTimeout(r, FETCH_DELAY));
   }
 

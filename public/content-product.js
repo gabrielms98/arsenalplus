@@ -1,7 +1,3 @@
-// Arsenal+ — product pages: shows the hidden price of out-of-stock items and
-// adds the watchlist button. The price is always present in the <head> as Open
-// Graph product meta tags, even when the storefront replaces the price block
-// with the "Avise-me" form.
 (() => {
   const AP = globalThis.ArsenalPlus;
   const getMeta = (prop) => AP.getMeta(document, prop);
@@ -14,21 +10,14 @@
   const getCurrency = () =>
     getMeta('product:price:currency') || getMeta('product:priceCurrency') || 'USD';
 
-  // The main product column is the .product-details that contains .product-meta
-  // (SKU/BRAND line). Related-product cards have .product-details too, but no
-  // .product-meta, so this only ever matches the main product.
   const findDetails = () => {
     const productMeta = document.querySelector('.product-details .product-meta');
     return productMeta ? productMeta.closest('.product-details') : null;
   };
 
-  // In-stock pages render <div class="product-price"><ins class="new-price">…
-  // themselves; :not(.arsenalplus-price) keeps our own block out of the check.
   const hasNativePrice = (details) =>
     !!details.querySelector('.product-price:not(.arsenalplus-price) .new-price');
 
-  // Available = the store shows a real price. A native price of "USD Consulte"
-  // (price on request) can't be purchased, so it doesn't count.
   const isAvailable = (details) => {
     const el = details.querySelector(
       '.product-price:not(.arsenalplus-price) .new-price'
@@ -65,8 +54,6 @@
 
     container.append(price, badge);
 
-    // Drop it right where the native price block would be: after the first
-    // .product-price (the one holding the brand logo).
     const brandBlock = details.querySelector('.product-price');
     const productMeta = details.querySelector('.product-meta');
     (brandBlock || productMeta).insertAdjacentElement('afterend', container);
@@ -75,8 +62,6 @@
   const removePrice = () => {
     document.querySelectorAll('.arsenalplus-price').forEach((el) => el.remove());
   };
-
-  // ---- Watchlist button -------------------------------------------------
 
   const getWatchlist = async () => {
     const { watchlist = {} } = await chrome.storage.local.get('watchlist');
@@ -137,8 +122,6 @@
     anchor.insertAdjacentElement('afterend', wrap);
   };
 
-  // ---- Popup messaging ---------------------------------------------------
-
   const getProductInfo = () => {
     const amount = getAmount();
     if (!amount) return null;
@@ -165,8 +148,6 @@
     };
   };
 
-  // ---- Wiring ------------------------------------------------------------
-
   chrome.storage.sync
     .get({ showHiddenPrices: true })
     .then(({ showHiddenPrices }) => {
@@ -175,12 +156,10 @@
     });
 
   chrome.storage.onChanged.addListener((changes, area) => {
-    // React immediately when the toggle changes in the popup.
     if (area === 'sync' && changes.showHiddenPrices) {
       if (changes.showHiddenPrices.newValue) injectPrice();
       else removePrice();
     }
-    // Keep the watch button in sync when the popup edits the watchlist.
     if (area === 'local' && changes.watchlist) {
       const btn = document.querySelector('.arsenalplus-watch-btn');
       const id = productId();

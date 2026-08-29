@@ -1,6 +1,3 @@
-// Arsenal+ shared helpers. Loaded before the content scripts (manifest order)
-// and imported by the service worker via importScripts(), so no window/DOM here
-// beyond what each caller passes in.
 globalThis.ArsenalPlus = {
   getMeta(doc, prop) {
     const el = doc.querySelector(`meta[property="${prop}"]`);
@@ -8,7 +5,6 @@ globalThis.ArsenalPlus = {
     return content ? content.trim() : null;
   },
 
-  // "USD 1.290,00" | "380,00" -> 1290.00 | 380.00 (null if unparseable)
   parsePrice(text) {
     if (!text) return null;
     const m = String(text).match(/\d[\d.]*(?:,\d+)?/);
@@ -21,20 +17,15 @@ globalThis.ArsenalPlus = {
     return !amount || /^0+([.,]0+)?$/.test(amount);
   },
 
-  // "USD Consulte" — price on request. The product can't be bought online,
-  // so the tracker treats it the same as unavailable.
   isConsultPrice(text) {
     return /consulte/i.test(String(text || ''));
   },
 
-  // ".../produto/foo-bar-35880.html" -> "35880"
   productIdFromUrl(url) {
     const m = String(url).match(/-(\d+)\.html/);
     return m ? m[1] : null;
   },
 
-  // Regex parsing (not DOMParser) so the same code runs in the service worker.
-  // The site emits these metas with property before content, consistently.
   extractPriceFromHtml(html) {
     const amount = html.match(
       /<meta\s+property="product:price:amount"\s+content="([^"]*)"/
@@ -47,9 +38,6 @@ globalThis.ArsenalPlus = {
     return { amount: amount[1], currency: (currency && currency[1]) || 'USD' };
   },
 
-  // Out-of-stock product pages render the "Avise-me" form (<div class="reply">);
-  // in-stock pages don't. Verified against both page variants. Pages whose
-  // price (meta or displayed) reads "Consulte" count as unavailable too.
   isAvailableHtml(html) {
     if (html.includes('class="reply"')) return false;
     const meta = html.match(
@@ -60,25 +48,32 @@ globalThis.ArsenalPlus = {
     return !(shown && this.isConsultPrice(shown[1]));
   },
 
-  // ---- Product-name classification ---------------------------------------
-  // The store has no usable attribute data (its own AEG/GBB filter has zero
-  // tagged products), so features classify products by display name. Rule
-  // order matters and was validated against the live catalog (395 products
-  // across six GBB searches): part nouns win over gun words, and gun words win
-  // over the "FOR <platform>" accessory pattern — one real rifle is literally
-  // named "VFC GBBR FOR AK105". Plain "barrel"/"stock"/"handguard"/"rail" must
-  // NOT be part nouns: they appear inside rifle names ("SHORT BARREL",
-  // "FOLDING STOCK", "M-LOK HANDGUARD RAIL").
+  normalizeName(name) {
+    return String(name || '').replace(/\s+/g, ' ').trim();
+  },
+
   NAME_PART:
-    /magazine|nozzle|valve|hop.?up|bucking|inner barrel|out+er barrel|barrel kit|gas block|charging handle|bolt catch|trigger guard|trigger box|stock tube|buffer|adapter|receiver|flash hider|speed ?loader|hand ?stop|\bgrip\b|\bshells?\b|\bpcs\b|\bkit\b|gas route|speed safety|retrofit/i,
+    /magazine|nozzle|valve|hop.?up|bucking|inner barrel|out+er barrel|barrel kit|gas block|charging handle|bolt catch|trigger guard|trigger box|stock tube|buffer|adapter|receiver|flash hider|speed ?loader|hand ?stop|fore ?grip|front grip|hand grip|vertical grip|angled grip|bipod grip|grip pod|pistol grip|motor grip|grip (set|screw|safety|cover|panel|end)|\bshells?\b|\bpcs\b|\bkit\b|gas route|speed safety|retrofit/i,
+  NAME_BARE_GRIP: /\bgrips?\b/i,
   NAME_LONG_GUN: /\b(rifle|smg|shotgun|carbine|sniper|dmr|pdw)\b/i,
   NAME_BLOWBACK_GUN: /blowback airsoft/i,
   NAME_ACCESSORY_FOR: /\bfor\b|\bpara\b/i,
   NAME_PISTOL: /\b(pistol|pistola|revolver|rev[oó]lver)\b/i,
+  NAME_GUN_SALE:
+    /blowback airsoft|airsoft (rifle|pistol|revolver|smg|carbine|shotgun|sniper|dmr|pdw|gun)\b|airgun (rifle|pistol|revolver)\b|pcp (rifle|pistol|carbine|combo)\b|air (rifle|pistol)\b/i,
+
+  isGunSaleName(name) {
+    const sold = this.normalizeName(name).split(this.NAME_ACCESSORY_FOR)[0];
+    return this.NAME_GUN_SALE.test(sold);
+  },
 
   isPartName(name) {
+    name = this.normalizeName(name);
     if (!name) return false;
     if (this.NAME_PART.test(name)) return true;
+    if (this.NAME_BARE_GRIP.test(name) && !this.isGunSaleName(name)) {
+      return true;
+    }
     if (
       this.NAME_LONG_GUN.test(name) ||
       this.NAME_BLOWBACK_GUN.test(name) ||
@@ -89,8 +84,8 @@ globalThis.ArsenalPlus = {
     return this.NAME_ACCESSORY_FOR.test(name);
   },
 
-  // Complete replica of any kind (rifle, SMG, shotgun, sniper or pistol).
   isReplicaName(name) {
+    name = this.normalizeName(name);
     if (!name || this.isPartName(name)) return false;
     return (
       this.NAME_LONG_GUN.test(name) ||
@@ -99,20 +94,52 @@ globalThis.ArsenalPlus = {
     );
   },
 
-  // Pistol/revolver only — AR-style "pistols" and pistol-carbine kits keep a
-  // long-gun word in the name and don't count as pistols.
   isPistolName(name) {
+    name = this.normalizeName(name);
     if (!name || this.isPartName(name)) return false;
     return this.NAME_PISTOL.test(name) && !this.NAME_LONG_GUN.test(name);
   },
 
-  // Long gun (the GBBR merged-search keep rule). The queries feeding it
-  // already guarantee a GBB context in the name. "blowback airsoft" alone
-  // covers long guns named without a gun word ("GBBR M4A1 BLOWBACK AIRSOFT
-  // BLACK") but must yield to pistols ("BLOWBACK AIRSOFT PISTOL").
   isLongGunName(name) {
+    name = this.normalizeName(name);
     if (!name || this.isPartName(name)) return false;
     if (this.NAME_LONG_GUN.test(name)) return true;
     return this.NAME_BLOWBACK_GUN.test(name) && !this.NAME_PISTOL.test(name);
+  },
+
+  PART_TYPES: {
+    magazine: { re: /magazines?\b/i },
+    bolt: {
+      re: /bolt (carrier|handle|cap|knob|head|end|catch|lock|stop|releas|plate|set)|complete (\w+ )?bolt|custom bolt|spring and bolt|recoil bolt|\bbolt for\b|\bbolts?$/i,
+    },
+    nozzle: { re: /nozzles?\b/i },
+    hopup: { re: /hop.?up|\bhop\b|bucking/i },
+    barrel: { re: /barrels?\b/i },
+    trigger: { re: /triggers?\b/i },
+    stock: { re: /\bstocks?\b|buttstock/i },
+    handguard: {
+      re: /hand ?guards?\b/i,
+      exclude: /handguard switch|wired to handguard/i,
+    },
+    foregrip: {
+      re: /fore ?grip|front grip|hand grip|vertical grip|angled grip|bipod grip|grip pod/i,
+    },
+    pistolgrip: {
+      re: /\bgrips?\b/i,
+      exclude:
+        /fore ?grip|front grip|hand grip|vertical grip|angled grip|bipod grip|grip pod|over ?grip|x-grip|grip line|tank grip/i,
+    },
+    slide: { re: /\bslides?\b/i, exclude: /slide check/i },
+  },
+
+  matchesPartType(name, key) {
+    const type = this.PART_TYPES[key];
+    name = this.normalizeName(name);
+    if (!type || !name) return false;
+    return (
+      type.re.test(name) &&
+      !(type.exclude && type.exclude.test(name)) &&
+      !this.isGunSaleName(name)
+    );
   },
 };

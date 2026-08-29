@@ -1,6 +1,3 @@
-/* The injected price reuses the site's .product-price / .new-price classes so it
-   inherits the native look; these rules only cover the extension's additions. */
-
 .arsenalplus-price {
   display: flex;
   align-items: center;
@@ -24,7 +21,6 @@
   user-select: none;
 }
 
-/* Listing-card variant: centered like the native card price */
 .arsenalplus-card-price {
   justify-content: center;
   text-align: center;
@@ -36,46 +32,26 @@
   font-size: 10px;
 }
 
-/* Buttons follow the popup's shadcn/ui "blue" theme (primary = blue-600);
-   content scripts can't use the React components, so the look is mirrored in
-   plain CSS. --arsenalplus-primary matches --primary in src/popup/popup.css. */
-:root {
-  --arsenalplus-primary: oklch(0.546 0.245 262.881);
-}
-
-/* Watchlist button on product pages — shadcn "outline" that fills when on */
 .arsenalplus-watch {
   margin: 10px 0;
 }
 
 .arsenalplus-watch-btn {
-  border: 1px solid #e4e4e7;
-  border-radius: 8px;
+  border: 1px solid #1b4b9b;
+  border-radius: 6px;
   background: #fff;
-  color: var(--arsenalplus-primary);
+  color: #1b4b9b;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   padding: 7px 14px;
   cursor: pointer;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.arsenalplus-watch-btn:hover {
-  background: #f4f4f5;
 }
 
 .arsenalplus-watch-btn.watching {
-  border-color: var(--arsenalplus-primary);
-  background: var(--arsenalplus-primary);
+  background: #1b4b9b;
   color: #fff;
 }
 
-.arsenalplus-watch-btn.watching:hover {
-  background: oklch(0.546 0.245 262.881 / 0.9);
-}
-
-/* Price range filter in the listing toolbar */
 .arsenalplus-filter {
   display: inline-flex;
   align-items: center;
@@ -116,7 +92,6 @@
   font-size: 12px;
 }
 
-/* Quick type filters (Só réplicas / Sem pistolas) */
 .arsenalplus-check {
   display: inline-flex;
   align-items: center;
@@ -128,8 +103,6 @@
   white-space: nowrap;
 }
 
-/* The site's theme hides raw checkbox inputs in favor of .fake-input spans;
-   force ours back to a visible native checkbox. */
 .arsenalplus-check input[type='checkbox'] {
   appearance: auto !important;
   -webkit-appearance: checkbox !important;
@@ -145,45 +118,53 @@
   display: none !important;
 }
 
-/* GBBR merged search banner on search-result pages */
-.arsenalplus-gbbr {
+.arsenalplus-presets {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 6px 8px;
   margin: 10px 0 16px;
   padding: 10px 14px;
-  border: 1px solid oklch(0.546 0.245 262.881 / 0.25);
+  border: 1px solid rgba(27, 75, 155, 0.25);
   border-radius: 8px;
-  background: oklch(0.546 0.245 262.881 / 0.05);
+  background: #f2f6fc;
   font-size: 13px;
 }
 
-.arsenalplus-gbbr-status {
-  color: #333;
+.arsenalplus-presets-label {
+  font-weight: 700;
+  color: #1b4b9b;
+  margin-right: 4px;
 }
 
-/* shadcn "default" (primary) button */
-.arsenalplus-gbbr-btn {
-  border: none;
-  border-radius: 8px;
-  background: var(--arsenalplus-primary);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 16px;
+.arsenalplus-preset-btn {
+  border: 1px solid #1b4b9b;
+  border-radius: 14px;
+  background: #fff;
+  color: #1b4b9b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  transition: background-color 0.15s ease, opacity 0.15s ease;
 }
 
-.arsenalplus-gbbr-btn:hover:not(:disabled) {
-  background: oklch(0.546 0.245 262.881 / 0.9);
+.arsenalplus-preset-btn:hover {
+  background: #e3ecf9;
 }
 
-.arsenalplus-gbbr-btn:disabled {
-  opacity: 0.5;
+.arsenalplus-preset-btn.active {
+  background: #1b4b9b;
+  color: #fff;
+}
+
+.arsenalplus-preset-btn:disabled {
+  opacity: 0.6;
   cursor: progress;
+}
+
+.arsenalplus-presets-status {
+  flex-basis: 100%;
+  color: #555;
+  font-size: 12px;
 }
