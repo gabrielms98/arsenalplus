@@ -87,6 +87,7 @@ body {
 
 .popup {
   width: 330px;
+  max-height: 600px;
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -225,6 +226,34 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
+}
+
+.watch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.watch-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.watch-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.watch-list::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.watch-list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
 }
 
 .watch-header {

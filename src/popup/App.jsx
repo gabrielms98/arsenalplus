@@ -195,34 +195,36 @@ export default function App() {
           </p>
         )}
 
-        {watched.map((item) => (
-          <div key={item.id} className="watch-item">
-            <span
-              className={`dot ${item.available ? 'ok' : ''}`}
-              title={item.available ? 'Disponível' : 'Indisponível'}
-            />
-            <Button
-              variant="link"
-              className="h-auto min-w-0 flex-1 justify-start p-0 text-xs font-normal text-foreground hover:text-primary"
-              title={item.name}
-              onClick={() => openUrl(item.url)}
-            >
-              <span className="truncate">{item.name}</span>
-            </Button>
-            <span className="watch-price">
-              {item.amount ? `${item.currency} ${item.amount}` : '—'}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-5 text-[15px] text-muted-foreground hover:bg-transparent hover:text-destructive"
-              title="Remover da lista"
-              onClick={() => toggleWatch(item)}
-            >
-              ×
-            </Button>
-          </div>
-        ))}
+        <div className="watch-list">
+          {watched.map((item) => (
+            <div key={item.id} className="watch-item">
+              <span
+                className={`dot ${item.available ? 'ok' : ''}`}
+                title={item.available ? 'Disponível' : 'Indisponível'}
+              />
+              <Button
+                variant="link"
+                className="h-auto min-w-0 flex-1 justify-start p-0 text-xs font-normal text-foreground hover:text-primary"
+                title={item.name}
+                onClick={() => openUrl(item.url)}
+              >
+                <span className="truncate">{item.name}</span>
+              </Button>
+              <span className="watch-price">
+                {item.amount ? `${item.currency} ${item.amount}` : '—'}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-5 text-[15px] text-muted-foreground hover:bg-transparent hover:text-destructive"
+                title="Remover da lista"
+                onClick={() => toggleWatch(item)}
+              >
+                ×
+              </Button>
+            </div>
+          ))}
+        </div>
 
         {watched.length > 0 && (
           <p className="muted small">
