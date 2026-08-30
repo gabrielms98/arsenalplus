@@ -114,20 +114,3 @@ clique em ↻ na extensão em `chrome://extensions`.
 ├── components.json         # config do shadcn/ui
 └── vite.config.js
 ```
-
-## Como funciona
-
-- Mesmo quando a loja esconde o preço de um produto indisponível, ele continua no
-  `<head>` da página (`product:price:amount` / `product:price:currency`). Os content
-  scripts leem esses metadados e injetam blocos `<div class="product-price"><ins
-  class="new-price">` — as mesmas classes do site — então o visual fica idêntico ao
-  preço nativo.
-- Nas listagens, cada cartão sem preço tem sua página buscada via `fetch` (mesma
-  origem), com cache em `chrome.storage.local` e 400ms entre requisições.
-- A disponibilidade de um produto é detectada pela presença do formulário
-  "Avise-me" (`<div class="reply">`) na página: presente = indisponível.
-- O service worker usa `chrome.alarms` para verificar a lista de acompanhamento a
-  cada hora e `chrome.notifications` para avisar quando um item volta ao estoque
-  (clicar na notificação abre a página do produto).
-- O popup conversa com os content scripts via `chrome.tabs.sendMessage`; o toggle é
-  persistido em `chrome.storage.sync` e aplicado na hora via `chrome.storage.onChanged`.
