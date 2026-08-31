@@ -1,6 +1,6 @@
 {
   "name": "arsenalplus",
-  "version": "0.5.1",
+  "version": "0.7.0",
   "description": "Extensão de Chrome (não oficial) com melhorias para arsenalsports.com",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
