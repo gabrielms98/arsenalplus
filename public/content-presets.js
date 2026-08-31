@@ -183,6 +183,8 @@
     for (const { card } of items) grid.append(document.importNode(card, true));
     const pager = pagination();
     if (pager) pager.style.display = 'none';
+    AP.listing?.refreshFacets();
+    AP.listing?.applySort();
     AP.listing?.applyFilter();
     AP.listing?.fillMissingPrices();
   };
@@ -193,6 +195,7 @@
     originalCards = null;
     const pager = pagination();
     if (pager) pager.style.display = '';
+    AP.listing?.refreshFacets();
     AP.listing?.applyFilter();
   };
 

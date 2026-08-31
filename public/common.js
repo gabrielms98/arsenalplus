@@ -143,6 +143,51 @@ globalThis.ArsenalPlus = {
     );
   },
 
+  PROPULSION: [
+    ['gbbr', /\bgbbr\b/i],
+    ['gbb', /\bgbb\b/i],
+    ['aeg', /\baeg\b/i],
+    ['co2', /\bco2\b/i],
+    ['hpa', /\bhpa\b/i],
+    ['pcp', /\bpcp\b/i],
+    ['spring', /\bspring\b/i],
+  ],
+  PROPULSION_LABELS: {
+    gbbr: 'GBBR',
+    gbb: 'GBB',
+    aeg: 'AEG',
+    co2: 'CO₂',
+    hpa: 'HPA',
+    pcp: 'PCP',
+    spring: 'Spring',
+  },
+
+  typeOf(name) {
+    name = this.normalizeName(name);
+    if (!name) return null;
+    for (const [key, re] of this.PROPULSION) if (re.test(name)) return key;
+    return null;
+  },
+
+  parseBrands(html) {
+    const set = new Set();
+    const re = /marca\[[a-z0-9-]+\]\[\]=\d+"[^>]*>\s*([^<]{1,60}?)\s*</gi;
+    for (const m of String(html).matchAll(re)) {
+      const brand = this.normalizeName(m[1])
+        .replace(/^Ver produtos\s+/i, '')
+        .toUpperCase();
+      if (brand && brand !== 'ARSENAL SPORTS') set.add(brand);
+    }
+    return [...set].sort((a, b) => b.length - a.length);
+  },
+
+  brandOf(name, brands) {
+    if (!brands || !brands.length) return null;
+    const n = this.normalizeName(name).toUpperCase();
+    for (const b of brands) if (n === b || n.startsWith(b + ' ')) return b;
+    return null;
+  },
+
   metaFromHtml(html, prop) {
     const m = String(html).match(
       new RegExp(`<meta\\s+property="${prop}"\\s+content="([^"]*)"`)

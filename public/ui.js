@@ -32,6 +32,49 @@ globalThis.ArsenalPlus.ui = {
     return btn;
   },
 
+  multiSelect({ title, className = 'arsenalplus-ms', onChange, onOpen }) {
+    const btn = this.el('button', { type: 'button', className: `${className}-btn`, title: title || '' });
+    const panel = this.el('div', { className: `${className}-panel`, hidden: true });
+    const root = this.el('div', { className }, btn, panel);
+
+    const close = (e) => {
+      if (root.contains(e.target)) return;
+      panel.hidden = true;
+      document.removeEventListener('click', close);
+    };
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      panel.hidden = !panel.hidden;
+      if (!panel.hidden) {
+        document.addEventListener('click', close);
+        onOpen && onOpen();
+      } else {
+        document.removeEventListener('click', close);
+      }
+    });
+
+    root.render = (summary, options) => {
+      btn.textContent = summary;
+      btn.classList.toggle(`${className}-btn--active`, options.some((o) => o.checked));
+      panel.textContent = '';
+      if (!options.length) {
+        panel.append(this.el('div', { className: `${className}-empty`, textContent: '—' }));
+        return;
+      }
+      for (const o of options) {
+        const cb = this.el('input', { type: 'checkbox', value: o.value, checked: o.checked });
+        cb.addEventListener('change', () =>
+          onChange([...panel.querySelectorAll('input:checked')].map((i) => i.value))
+        );
+        panel.append(
+          this.el('label', { className: `${className}-opt` }, cb, document.createTextNode(' ' + o.label))
+        );
+      }
+    };
+    return root;
+  },
+
   productCard({ url, name, image, price, badge, className = '' }) {
     const link = () =>
       this.el('a', { href: url, title: `${name} Arsenal Sports` });
