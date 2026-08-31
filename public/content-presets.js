@@ -5,7 +5,6 @@
   const toolbox = document.querySelector('nav.toolbox');
   if (!grid || !toolbox) return;
 
-  const FETCH_DELAY = 400;
   const NOVIDADES_TARGET = 36;
   const NOVIDADES_MAX_PAGES = 72;
   const NOVIDADES_SEEN_KEY = 'novidadesSeenMaxId';
@@ -24,19 +23,10 @@
   };
 
   const pageCache = new Map();
-  let fetchedOnce = false;
-
-  const fetchText = async (url) => {
-    if (fetchedOnce) await new Promise((r) => setTimeout(r, FETCH_DELAY));
-    fetchedOnce = true;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.text();
-  };
 
   const fetchPage = async (url) => {
     if (pageCache.has(url)) return pageCache.get(url);
-    const parsed = parsePage(await fetchText(url));
+    const parsed = parsePage(await AP.net.text(url));
     pageCache.set(url, parsed);
     return parsed;
   };
@@ -80,73 +70,8 @@
     return [...kept.values()].sort((a, b) => a.name.localeCompare(b.name));
   };
 
-  const productMeta = (html, prop) => {
-    const m = html.match(
-      new RegExp(`<meta\\s+property="${prop}"\\s+content="([^"]*)"`)
-    );
-    return m ? m[1].trim() : null;
-  };
-
-  const buildCard = ({ url, name, image, price, isNew }) => {
-    const makeLink = () => {
-      const a = document.createElement('a');
-      a.href = url;
-      a.title = `${name} Arsenal Sports`;
-      return a;
-    };
-
-    const wrap = document.createElement('div');
-    wrap.className = 'product-wrap arsenalplus-nov-card';
-    const product = document.createElement('div');
-    product.className = 'product';
-
-    const figure = document.createElement('figure');
-    figure.className = 'product-media';
-    const media = makeLink();
-    if (image) {
-      const img = document.createElement('img');
-      img.src = image;
-      img.alt = name;
-      img.loading = 'lazy';
-      media.append(img);
-    }
-    figure.append(media);
-
-    const details = document.createElement('div');
-    details.className = 'product-details';
-
-    if (isNew) {
-      const badge = document.createElement('span');
-      badge.className = 'arsenalplus-badge arsenalplus-new-badge';
-      badge.textContent = 'NOVO';
-      badge.title = 'Adicionado à loja desde sua última visita (Arsenal+)';
-      details.append(badge);
-    }
-
-    const title = document.createElement('h3');
-    title.className = 'product-name';
-    const nameLink = makeLink();
-    nameLink.textContent = name;
-    title.append(nameLink);
-    details.append(title);
-
-    if (price) {
-      const container = document.createElement('div');
-      container.className = 'product-price';
-      const ins = document.createElement('ins');
-      ins.className = 'new-price';
-      ins.textContent = `${price.currency} ${price.amount}`;
-      container.append(ins);
-      details.append(container);
-    }
-
-    product.append(figure, details);
-    wrap.append(product);
-    return wrap;
-  };
-
   const collectNovidades = async (onProgress) => {
-    const xml = await fetchText(`${location.origin}/sitemap`);
+    const xml = await AP.net.text(`${location.origin}/sitemap`);
     const products = new Map();
     for (const m of xml.matchAll(
       /<loc>\s*([^<]*\/produto\/[^<]*-(\d+)\.html)\s*<\/loc>/g
@@ -161,22 +86,30 @@
     const total = Math.min(entries.length, NOVIDADES_MAX_PAGES);
     for (let i = 0; i < total && items.length < NOVIDADES_TARGET; i++) {
       const [id, url] = entries[i];
-      const html = await fetchText(url);
+      const html = await AP.net.product(url);
       const crumbs = html.match(/<ul class="breadcrumb">[\s\S]*?<\/ul>/);
       if (crumbs && /airsoft/i.test(crumbs[0])) {
-        const name = (productMeta(html, 'og:title') || '')
+        const name = (AP.metaFromHtml(html, 'og:title') || '')
           .replace(/\s*\|\s*Arsenal Sports\s*$/i, '')
           .replace(/#(34|38|39);/g, (_, n) => String.fromCharCode(n))
           .trim();
         if (name) {
           items.push({
             name,
-            card: buildCard({
+            card: AP.ui.productCard({
               url,
               name,
-              image: productMeta(html, 'og:image'),
+              image: AP.metaFromHtml(html, 'og:image'),
               price: AP.extractPriceFromHtml(html),
-              isNew: seenMax != null && id > seenMax,
+              className: 'arsenalplus-nov-card',
+              badge:
+                seenMax != null && id > seenMax
+                  ? AP.ui.badge(
+                      'NOVO',
+                      'Adicionado à loja desde sua última visita (Arsenal+)',
+                      'arsenalplus-new-badge'
+                    )
+                  : null,
             }),
           });
         }
@@ -331,12 +264,11 @@
 
   bar.append(label);
   for (const preset of PRESETS) {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'arsenalplus-preset-btn';
-    chip.textContent = preset.label;
-    chip.title = preset.title;
-    chip.addEventListener('click', () => activate(preset));
+    const chip = AP.ui.chip({
+      label: preset.label,
+      title: preset.title,
+      onClick: () => activate(preset),
+    });
     chips.set(preset.key, chip);
     bar.append(chip);
   }

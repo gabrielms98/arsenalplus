@@ -142,4 +142,85 @@ globalThis.ArsenalPlus = {
       !this.isGunSaleName(name)
     );
   },
+
+  metaFromHtml(html, prop) {
+    const m = String(html).match(
+      new RegExp(`<meta\\s+property="${prop}"\\s+content="([^"]*)"`)
+    );
+    return m ? m[1].trim() : null;
+  },
+
+  STOP_HEAD: /<\/head>/i,
+  STOP_PRODUCT: /<footer/i,
+
+  net: {
+    BASE_DELAY: 400,
+    MAX_DELAY: 8000,
+    _nextAt: 0,
+    _delay: 400,
+
+    _sleep(ms) {
+      return new Promise((r) => setTimeout(r, ms));
+    },
+
+    async _pace() {
+      const wait = this._nextAt - Date.now();
+      if (wait > 0) await this._sleep(wait);
+      this._nextAt = Date.now() + this._delay;
+    },
+
+    _observe(res) {
+      const rate = Number(res.headers.get('x-abuse-ratelimit')) || 0;
+      const crawler = (res.headers.get('x-abuse-crawler') || '').toLowerCase();
+      if (res.status === 429 || rate > 0 || (crawler && crawler !== 'none')) {
+        this._delay = Math.min(this._delay * 2, this.MAX_DELAY);
+        const retry = Number(res.headers.get('retry-after')) || 0;
+        if (retry > 0) this._nextAt = Date.now() + retry * 1000;
+      } else {
+        this._delay = Math.max(this.BASE_DELAY, Math.round(this._delay * 0.8));
+      }
+    },
+
+    async fetch(url, opts) {
+      await this._pace();
+      const res = await fetch(url, opts);
+      this._observe(res);
+      return res;
+    },
+
+    async text(url) {
+      const res = await this.fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.text();
+    },
+
+    async partial(url, stopRe) {
+      const res = await this.fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!stopRe || !res.body) return res.text();
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let text = '';
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          text += decoder.decode(value, { stream: true });
+          if (stopRe.test(text)) break;
+        }
+      } finally {
+        reader.cancel().catch(() => {});
+      }
+      return text;
+    },
+
+    head(url) {
+      return this.partial(url, ArsenalPlus.STOP_HEAD);
+    },
+
+    product(url) {
+      return this.partial(url, ArsenalPlus.STOP_PRODUCT);
+    },
+  },
 };

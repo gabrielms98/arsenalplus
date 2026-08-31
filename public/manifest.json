@@ -28,6 +28,7 @@
       ],
       "js": [
         "common.js",
+        "ui.js",
         "content-product.js",
         "content-listing.js",
         "content-presets.js"

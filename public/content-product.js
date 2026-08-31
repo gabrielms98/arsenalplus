@@ -37,22 +37,17 @@
     if (hasNativePrice(details)) return;
     if (details.querySelector('.arsenalplus-price')) return;
 
-    const container = document.createElement('div');
-    container.className = 'product-price arsenalplus-price';
-
-    const price = document.createElement('ins');
-    price.className = 'new-price';
-    price.textContent = `${getCurrency()} ${amount}`;
-
-    const badge = document.createElement('span');
-    badge.className = 'arsenalplus-badge';
-    badge.textContent = 'Arsenal+';
     const validUntil = getMeta('product:priceValidUntil');
-    badge.title =
-      'Preço extraído dos metadados da página' +
-      (validUntil ? ` (válido até ${validUntil})` : '');
-
-    container.append(price, badge);
+    const container = AP.ui.priceTag({
+      amount,
+      currency: getCurrency(),
+      className: 'arsenalplus-price',
+      badge: AP.ui.badge(
+        'Arsenal+',
+        'Preço extraído dos metadados da página' +
+          (validUntil ? ` (válido até ${validUntil})` : '')
+      ),
+    });
 
     const brandBlock = details.querySelector('.product-price');
     const productMeta = details.querySelector('.product-meta');

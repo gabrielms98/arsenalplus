@@ -4,7 +4,6 @@
   const CACHE_KEY = 'priceCache';
   const CACHE_TTL = 24 * 60 * 60 * 1000;
   const CACHE_MAX_ENTRIES = 500;
-  const FETCH_DELAY = 400;
   const FILTER_STORE = 'arsenalplus_filter';
 
   const allCards = () => [...document.querySelectorAll('.product')];
@@ -24,19 +23,12 @@
   const fillCard = (card, { amount, currency }) => {
     if (card.querySelector('.arsenalplus-price')) return;
 
-    const container = document.createElement('div');
-    container.className = 'product-price arsenalplus-price arsenalplus-card-price';
-
-    const price = document.createElement('ins');
-    price.className = 'new-price';
-    price.textContent = `${currency} ${amount}`;
-
-    const badge = document.createElement('span');
-    badge.className = 'arsenalplus-badge';
-    badge.textContent = 'A+';
-    badge.title = 'Preço recuperado pelo Arsenal+ (produto indisponível)';
-
-    container.append(price, badge);
+    const container = AP.ui.priceTag({
+      amount,
+      currency,
+      className: 'arsenalplus-price arsenalplus-card-price',
+      badge: AP.ui.badge('A+', 'Preço recuperado pelo Arsenal+ (produto indisponível)'),
+    });
 
     const details = card.querySelector('.product-details') || card;
     const btn = details.querySelector('a.btn');
@@ -63,17 +55,13 @@
       let entry = cache[id];
       if (!entry || now - entry.ts > CACHE_TTL) {
         try {
-          const res = await fetch(url);
-          if (!res.ok) continue;
-          const price = AP.extractPriceFromHtml(await res.text());
+          const price = AP.extractPriceFromHtml(await AP.net.head(url));
           if (!price) continue;
           entry = { ...price, ts: now };
           cache[id] = entry;
           cacheDirty = true;
         } catch {
           continue;
-        } finally {
-          await new Promise((r) => setTimeout(r, FETCH_DELAY));
         }
       }
 

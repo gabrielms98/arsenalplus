@@ -2,7 +2,6 @@ importScripts('common.js');
 
 const CHECK_ALARM = 'arsenalplus-check';
 const CHECK_PERIOD_MINUTES = 60;
-const FETCH_DELAY = 500;
 
 const ensureAlarm = () => {
   chrome.alarms.create(CHECK_ALARM, {
@@ -32,9 +31,7 @@ async function checkWatchlist() {
 
   for (const item of items) {
     try {
-      const res = await fetch(item.url);
-      if (!res.ok) continue;
-      const html = await res.text();
+      const html = await ArsenalPlus.net.product(item.url);
 
       const available = ArsenalPlus.isAvailableHtml(html);
       const price = ArsenalPlus.extractPriceFromHtml(html);
@@ -58,7 +55,6 @@ async function checkWatchlist() {
         });
       }
     } catch {}
-    await new Promise((r) => setTimeout(r, FETCH_DELAY));
   }
 
   await chrome.storage.local.set({ watchlist });
