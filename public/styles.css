@@ -168,3 +168,17 @@
   color: #555;
   font-size: 12px;
 }
+
+.arsenalplus-nov-card .product-details {
+  text-align: center;
+}
+
+.arsenalplus-nov-card .product-price {
+  justify-content: center;
+}
+
+.arsenalplus-new-badge {
+  background: #2e7d32;
+  margin-bottom: 4px;
+  cursor: default;
+}

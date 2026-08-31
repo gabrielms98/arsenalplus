@@ -1,45 +1,14 @@
 (() => {
   const AP = globalThis.ArsenalPlus;
 
-  const FETCH_DELAY = 400;
-
-  const partPreset = (key, label, title, queries) => ({
-    key,
-    label,
-    title: `${title} — peças de todo o catálogo (Arsenal+)`,
-    queries,
-    keep: (name) => AP.matchesPartType(name, key),
-    doneText: (n) => `${n} itens — ${label.toLowerCase()}, catálogo inteiro.`,
-  });
-
-  const PRESETS = [
-    {
-      key: 'gbbr',
-      label: 'Rifles GBB',
-      title:
-        'Todos os rifles GBB do catálogo — a busca da loja não os acha de ' +
-        'uma vez: uns se chamam "GBBR", outros só "GBB" (Arsenal+)',
-      queries: ['gbbr', 'gbb rifle', 'gbb smg', 'gbb shotgun', 'gbb carbine', 'gbb sniper'],
-      keep: (name) => AP.isLongGunName(name),
-      doneText: (n) =>
-        `${n} rifles GBB — resultado combinado de 6 buscas, sem peças nem pistolas.`,
-    },
-    partPreset('magazine', 'Magazines', 'Todos os magazines', ['magazine']),
-    partPreset('bolt', 'Bolts', 'Bolts, bolt carriers, bolt catches e afins', ['bolt']),
-    partPreset('nozzle', 'Nozzles', 'Todos os nozzles', ['nozzle']),
-    partPreset('hopup', 'Hop-up', 'Câmaras de hop-up e buckings', ['hop', 'bucking']),
-    partPreset('barrel', 'Canos', 'Canos internos e externos (inner/outer barrel)', ['barrel']),
-    partPreset('trigger', 'Gatilhos', 'Gatilhos e trigger sets', ['trigger']),
-    partPreset('stock', 'Coronhas', 'Coronhas (stocks) e tubos de coronha', ['stock']),
-    partPreset('handguard', 'Handguards', 'Todos os handguards', ['handguard']),
-    partPreset('foregrip', 'Grips frontais', 'Foregrips verticais e angulares', ['grip']),
-    partPreset('pistolgrip', 'Pistol grips', 'Pistol grips, motor grips e empunhaduras', ['grip']),
-    partPreset('slide', 'Slides', 'Slides de pistola e peças de slide', ['slide']),
-  ];
-
   const grid = document.querySelector('.product_list');
   const toolbox = document.querySelector('nav.toolbox');
   if (!grid || !toolbox) return;
+
+  const FETCH_DELAY = 400;
+  const NOVIDADES_TARGET = 36;
+  const NOVIDADES_MAX_PAGES = 72;
+  const NOVIDADES_SEEN_KEY = 'novidadesSeenMaxId';
 
   const searchUrl = (q, page) =>
     `${location.origin}/produtos/filter?q=${encodeURIComponent(q)}` +
@@ -57,13 +26,17 @@
   const pageCache = new Map();
   let fetchedOnce = false;
 
-  const fetchPage = async (url) => {
-    if (pageCache.has(url)) return pageCache.get(url);
+  const fetchText = async (url) => {
     if (fetchedOnce) await new Promise((r) => setTimeout(r, FETCH_DELAY));
     fetchedOnce = true;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const parsed = parsePage(await res.text());
+    return res.text();
+  };
+
+  const fetchPage = async (url) => {
+    if (pageCache.has(url)) return pageCache.get(url);
+    const parsed = parsePage(await fetchText(url));
     pageCache.set(url, parsed);
     return parsed;
   };
@@ -106,6 +79,162 @@
 
     return [...kept.values()].sort((a, b) => a.name.localeCompare(b.name));
   };
+
+  const productMeta = (html, prop) => {
+    const m = html.match(
+      new RegExp(`<meta\\s+property="${prop}"\\s+content="([^"]*)"`)
+    );
+    return m ? m[1].trim() : null;
+  };
+
+  const buildCard = ({ url, name, image, price, isNew }) => {
+    const makeLink = () => {
+      const a = document.createElement('a');
+      a.href = url;
+      a.title = `${name} Arsenal Sports`;
+      return a;
+    };
+
+    const wrap = document.createElement('div');
+    wrap.className = 'product-wrap arsenalplus-nov-card';
+    const product = document.createElement('div');
+    product.className = 'product';
+
+    const figure = document.createElement('figure');
+    figure.className = 'product-media';
+    const media = makeLink();
+    if (image) {
+      const img = document.createElement('img');
+      img.src = image;
+      img.alt = name;
+      img.loading = 'lazy';
+      media.append(img);
+    }
+    figure.append(media);
+
+    const details = document.createElement('div');
+    details.className = 'product-details';
+
+    if (isNew) {
+      const badge = document.createElement('span');
+      badge.className = 'arsenalplus-badge arsenalplus-new-badge';
+      badge.textContent = 'NOVO';
+      badge.title = 'Adicionado à loja desde sua última visita (Arsenal+)';
+      details.append(badge);
+    }
+
+    const title = document.createElement('h3');
+    title.className = 'product-name';
+    const nameLink = makeLink();
+    nameLink.textContent = name;
+    title.append(nameLink);
+    details.append(title);
+
+    if (price) {
+      const container = document.createElement('div');
+      container.className = 'product-price';
+      const ins = document.createElement('ins');
+      ins.className = 'new-price';
+      ins.textContent = `${price.currency} ${price.amount}`;
+      container.append(ins);
+      details.append(container);
+    }
+
+    product.append(figure, details);
+    wrap.append(product);
+    return wrap;
+  };
+
+  const collectNovidades = async (onProgress) => {
+    const xml = await fetchText(`${location.origin}/sitemap`);
+    const products = new Map();
+    for (const m of xml.matchAll(
+      /<loc>\s*([^<]*\/produto\/[^<]*-(\d+)\.html)\s*<\/loc>/g
+    )) {
+      products.set(Number(m[2]), m[1]);
+    }
+    const entries = [...products.entries()].sort((a, b) => b[0] - a[0]);
+    const { [NOVIDADES_SEEN_KEY]: seenMax } =
+      await chrome.storage.local.get(NOVIDADES_SEEN_KEY);
+
+    const items = [];
+    const total = Math.min(entries.length, NOVIDADES_MAX_PAGES);
+    for (let i = 0; i < total && items.length < NOVIDADES_TARGET; i++) {
+      const [id, url] = entries[i];
+      const html = await fetchText(url);
+      const crumbs = html.match(/<ul class="breadcrumb">[\s\S]*?<\/ul>/);
+      if (crumbs && /airsoft/i.test(crumbs[0])) {
+        const name = (productMeta(html, 'og:title') || '')
+          .replace(/\s*\|\s*Arsenal Sports\s*$/i, '')
+          .replace(/#(34|38|39);/g, (_, n) => String.fromCharCode(n))
+          .trim();
+        if (name) {
+          items.push({
+            name,
+            card: buildCard({
+              url,
+              name,
+              image: productMeta(html, 'og:image'),
+              price: AP.extractPriceFromHtml(html),
+              isNew: seenMax != null && id > seenMax,
+            }),
+          });
+        }
+      }
+      onProgress(i + 1, total, items.length);
+    }
+
+    if (entries.length) {
+      await chrome.storage.local.set({ [NOVIDADES_SEEN_KEY]: entries[0][0] });
+    }
+    return items;
+  };
+
+  const partPreset = (key, label, title, queries) => ({
+    key,
+    label,
+    title: `${title} — peças de todo o catálogo (Arsenal+)`,
+    queries,
+    keep: (name) => AP.matchesPartType(name, key),
+    doneText: (n) => `${n} itens — ${label.toLowerCase()}, catálogo inteiro.`,
+  });
+
+  const PRESETS = [
+    {
+      key: 'novidades',
+      label: 'Novidades',
+      title:
+        'Produtos de airsoft adicionados mais recentemente — a loja não ' +
+        'ordena por data; o Arsenal+ lê o sitemap e ordena pelo ID do ' +
+        'produto (Arsenal+)',
+      collect: collectNovidades,
+      doneText: (n) =>
+        `${n} itens de airsoft mais recentes — "NOVO" marca o que entrou ` +
+        'desde sua última visita.',
+    },
+    {
+      key: 'gbbr',
+      label: 'Rifles GBB',
+      title:
+        'Todos os rifles GBB do catálogo — a busca da loja não os acha de ' +
+        'uma vez: uns se chamam "GBBR", outros só "GBB" (Arsenal+)',
+      queries: ['gbbr', 'gbb rifle', 'gbb smg', 'gbb shotgun', 'gbb carbine', 'gbb sniper'],
+      keep: (name) => AP.isLongGunName(name),
+      doneText: (n) =>
+        `${n} rifles GBB — resultado combinado de 6 buscas, sem peças nem pistolas.`,
+    },
+    partPreset('magazine', 'Magazines', 'Todos os magazines', ['magazine']),
+    partPreset('bolt', 'Bolts', 'Bolts, bolt carriers, bolt catches e afins', ['bolt']),
+    partPreset('nozzle', 'Nozzles', 'Todos os nozzles', ['nozzle']),
+    partPreset('hopup', 'Hop-up', 'Câmaras de hop-up e buckings', ['hop', 'bucking']),
+    partPreset('barrel', 'Canos', 'Canos internos e externos (inner/outer barrel)', ['barrel']),
+    partPreset('trigger', 'Gatilhos', 'Gatilhos e trigger sets', ['trigger']),
+    partPreset('stock', 'Coronhas', 'Coronhas (stocks) e tubos de coronha', ['stock']),
+    partPreset('handguard', 'Handguards', 'Todos os handguards', ['handguard']),
+    partPreset('foregrip', 'Grips frontais', 'Foregrips verticais e angulares', ['grip']),
+    partPreset('pistolgrip', 'Pistol grips', 'Pistol grips, motor grips e empunhaduras', ['grip']),
+    partPreset('slide', 'Slides', 'Slides de pistola e peças de slide', ['slide']),
+  ];
 
   const pagination = () => document.querySelector('.toolbox-pagination');
 
@@ -172,14 +301,17 @@
     if (!results.has(preset.key)) {
       running = true;
       for (const chip of chips.values()) chip.disabled = true;
+      const onProgress = (done, total, found) => {
+        status.textContent =
+          `Buscando ${preset.label.toLowerCase()}… página ${done} de ${total} ` +
+          `— ${found} encontrados.`;
+      };
       try {
         results.set(
           preset.key,
-          await collect(preset, (done, total, found) => {
-            status.textContent =
-              `Buscando ${preset.label.toLowerCase()}… página ${done} de ${total} ` +
-              `— ${found} encontrados.`;
-          })
+          await (preset.collect
+            ? preset.collect(onProgress)
+            : collect(preset, onProgress))
         );
       } catch {
         status.textContent =

@@ -25,6 +25,11 @@ Extensão de Chrome com melhorias para [arsenalsports.com](https://www.arsenalsp
   Handguards, Grips frontais, Pistol grips, Slides) roda as buscas que cobrem o tipo,
   junta todas as páginas de resultado, filtra pelo nome e mostra tudo em uma página só
   (usando os próprios cartões da loja, então preços e filtros continuam funcionando).
+- **Novidades**: a loja não tem ordenação por data de cadastro; o preset "Novidades" lê
+  o sitemap (todo o catálogo em uma requisição), ordena pelo ID do produto (sequencial,
+  então maior = mais recente), busca as páginas dos produtos mais novos e mostra os de
+  departamentos de airsoft, mais novos primeiro — com um selo **NOVO** nos que entraram
+  na loja desde a sua última visita.
 - **Filtro de preço**: a loja tem um filtro de faixa de preço quebrado no servidor; a
   extensão adiciona campos mín/máx na barra de ordenação que filtram os produtos da
   página no navegador (persistem entre páginas da mesma busca).
